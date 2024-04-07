@@ -1,0 +1,19 @@
+#!/bin/sh -e
+##:
+#h: Usage: xdg-open FILE|URL
+#h:
+#h: A wrapper around explorer.exe that mimics xdg-open(1).
+##:
+xdg_open() {
+    case "$1" in
+        *://*) u="$1";;
+        *)     u="$(echo "$1" | tr '/' '\\')";;
+    esac
+    explorer.exe "\$u"
+}
+if test @"${SCRNAME:-$(basename "$0")}" = @"xdg-open"; then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0";;
+        *)            xdg_open "$@"; exit 0;;
+    esac
+fi

@@ -1,0 +1,69 @@
+#!/bin/sh -e
+##:
+#h: Usage: schtasks-daily [-V][-t HOUR] TASK COMMAND
+#h:
+#h: Schedule a task named "DAILY-<TASK>" to be executed daily,
+#h: by default at "2:00".
+#h:
+#h: Default shell: C:\Windows\System32\sh.exe ($SCHTASKS_SHELL)
+#h: Default hour: 2:00 ($SCHTASKS_HOUR)
+##:
+schtasks_daily() {
+    local OPTIND optopt name command directory ops= 
+
+    ## Require administrator
+    if test ! -w C:/Windows/System32/cmd.exe; then
+        echo >&2 "error: Execute this script as administrator."
+        return 1
+    fi
+    
+    ## Parse command line arguments.
+    while getopts "Vt:" optopt; do
+        ops="${ops}${optopt}"
+        case $optopt in
+            V)  echo "SCHTASKS_HOUR  : ${SCHTASKS_HOUR}"
+                echo "SCHTASKS_SHELL : ${SCHTASKS_SHELL}"
+                return 0;;
+            t)  SCHTASKS_HOUR="${OPTARG}";;
+            \?) return 1;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    if test ! -n "$1"; then
+        echo >&2 "error: Please specify a task."
+        return 1
+    fi
+    name="DAILY-$1"; shift
+    command="$*"
+    
+    ## Create shell script.
+    directory="${APPDATA}/schtasks"
+    mkdir -p "${directory}"
+    cat > "${directory}/${name}.sh" <<-EOF
+	#!/bin/sh -e
+	{
+	    ${command}
+	} > '${directory}/${name}.log'
+	EOF
+    
+    ## Create task.
+    schtasks                   \
+        /Create                \
+        /NP                    \
+        /TN "${name}"          \
+        /RL "HIGHEST"          \
+        /SC "DAILY"            \
+        /ST "${SCHTASKS_HOUR}" \
+        /TR "${SCHTASKS_SHELL} -e ${directory}/${name}.sh" \
+        /F
+    
+}
+## -------------------------------------------------------------------
+SCHTASKS_HOUR="${SCHTASKS_HOUR:-02:00}"
+SCHTASKS_SHELL="${SCHTASKS_SHELL:-C:\\Windows\\System32\\sh.exe}"
+if test @"${SCRNAME:-$(basename "$0")}" = @"schtasks-daily";then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
+        *)            schtasks_daily "$@"; exit 0       ;;
+    esac
+fi

@@ -1,0 +1,27 @@
+#!/bin/sh -e
+##:
+#h: Usage: wsudo COMMAND
+#h:
+#h: Execute command elevated using the local SSHD server to do the
+#h: elevation.
+##:
+wsudo() {
+    ## If elevated already, execute.
+    if test @"$(whoami)" = @"root" || test -w C:/Windows; then
+        eval "$*"
+        return 0
+    fi
+    ## Try using ssh.
+    if test ! -d ~/.ssh; then
+        echo >&2 "error: Please configure local ~/.ssh"
+        return 1
+    fi
+    ssh "${USERNAME}@127.0.0.1" "set -e; $*" 
+}
+## -------------------------------------------------------------------
+if test @"$(basename "$0")" = @"wsudo"; then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0";;
+        *)            wsudo "$@"; exit 0;;
+    esac
+fi

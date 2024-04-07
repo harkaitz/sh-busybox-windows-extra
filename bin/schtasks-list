@@ -1,0 +1,78 @@
+#!/bin/sh -e
+##:
+#h: Usage: schtasks-list ...
+#h:
+#h: Manage scheduled tasks with schtasks-{daily,boot}(1).
+#h:
+#h:   -l              : List created tasks.
+#h:   -d TASK         : Disable tasks.
+#h:   -r TASK         : Execute tasks.
+#h:   -L TASK         : Print log.
+#h:
+#h: Tasks that start with "BOOT-" and "DAILY-" are listed.
+##:
+schtasks_list() {
+    local OPTIND optopt ops=
+    
+    ## Require administrator
+    if test ! -w C:/Windows/System32/cmd.exe; then
+        echo >&2 "error: Execute this script as administrator."
+        return 1
+    fi
+
+    ## Parse command line arguments.
+    while getopts "ldrL" optopt; do
+        ops="${ops}${optopt}"
+        case $optopt in
+            \?) return 1;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    
+    ## Operations.
+    case "${ops}" in
+        *l*) schtasks_tasks        ;;
+        *d*) schtasks_disable "$@" ;;
+        *r*) schtasks_run     "$@" ;;
+        *L*) schtasks_log     "$@" ;;
+    esac
+}
+## -------------------------------------------------------------------
+schtasks_tasks() {
+    schtasks /QUERY /NH /FO CSV /V | tr -d '"' | \
+    while IFS=',' read -r host name next status ign; do
+        name="${name#\\}"
+        case "${name}" in
+            ci*|DAILY-*|RAMFS|BOOT-*) true;;
+            *)                        continue;;
+        esac
+        printf '%-15s %-15s %s\n' "${name}" "${status}" "${next}"
+    done
+}
+schtasks_disable() {
+    local task
+    for task in "$@"; do
+        schtasks /CHANGE /DISABLE /TN "\\${task}"
+    done
+}
+schtasks_run() {
+    local task
+    for task in "$@"; do
+        echo "== ${task}"
+        schtasks.exe /Run /tn "${task}"
+    done
+}
+schtasks_log() {
+    if test ! -n "$1"; then
+        echo >&2 "error: Please specify a task."
+        return 1
+    fi
+    cat "${APPDATA}/schtasks/${1}.log"
+}
+## -------------------------------------------------------------------
+if test @"${SCRNAME:-$(basename "$0")}" = @"schtasks-list"; then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0";;
+        *)            schtasks_list "$@"; exit 0       ;;
+    esac
+fi

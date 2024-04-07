@@ -1,0 +1,62 @@
+#!/bin/sh -e
+##:
+#h: Usage: schtasks-boot [-V] TASK COMMAND
+#h:
+#h: Schedule a shell command to be executed at boot using the windows
+#h: schtasks utility. The task name will be prepended "BOOT-".
+#h:
+#h: Default shell: C:\Windows\System32\sh.exe ($SCHTASKS_SHELL)
+##:
+schtasks_boot() {
+    local OPTIND optopt name command directory ops=
+    
+    ## Require administrator
+    if test ! -w C:/Windows/System32/cmd.exe; then
+        echo >&2 "error: Execute this script as administrator."
+        return 1
+    fi
+    
+    ## Parse command line arguments.
+    while getopts "ldarL" optopt; do
+        ops="${ops}${optopt}"
+        case $optopt in
+            V)  echo "SCHTASKS_SHELL : ${SCHTASKS_SHELL}"; return 0;;
+            \?) return 1;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    if test ! -n "$1"; then
+        echo >&2 "error: Please specify a task."
+        return 1
+    fi
+    name="BOOT-$1"; shift
+    command="$*"
+    
+    ## Create shell script.
+    directory="${APPDATA}/schtasks"
+    mkdir -p "${directory}"
+    cat > "${directory}/${name}.sh" <<-EOF
+	#!/bin/sh -e
+	{
+	    ${command}
+	} > '${directory}/${name}.log'
+	EOF
+    
+    ## Create task.
+    schtasks            \
+        /Create         \
+        /TN "${name}"   \
+        /RL "HIGHEST"   \
+        /TR "${SCHTASKS_SHELL} -e ${directory}/${name}.sh" \
+        /SC "onstart"   \
+        /F
+}
+
+## -------------------------------------------------------------------
+SCHTASKS_SHELL="${SCHTASKS_SHELL:-C:\\Windows\\System32\\sh.exe}"
+if test @"${SCRNAME:-$(basename "$0")}" = @"schtasks-boot"; then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0"         ;;
+        *)            schtasks_boot "$@"; exit 0                ;;
+    esac
+fi
