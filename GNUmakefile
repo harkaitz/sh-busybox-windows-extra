@@ -24,7 +24,5 @@ install-sh:
 	cp bin/schtasks-boot    $(DESTDIR)$(PREFIX)/bin
 	cp bin/schtasks-daily   $(DESTDIR)$(PREFIX)/bin
 	cp bin/schtasks-list    $(DESTDIR)$(PREFIX)/bin
-	cp bin/cygwin           $(DESTDIR)$(PREFIX)/bin
-	cp bin/wcompat          $(DESTDIR)$(PREFIX)/bin
 	cp bin/xdg-open         $(DESTDIR)$(PREFIX)/bin
 ## -- BLOCK:sh --

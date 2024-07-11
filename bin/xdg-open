@@ -5,11 +5,12 @@
 #h: A wrapper around explorer.exe that mimics xdg-open(1).
 ##:
 xdg_open() {
+    local u
     case "$1" in
         *://*) u="$1";;
         *)     u="$(echo "$1" | tr '/' '\\')";;
     esac
-    explorer.exe "\$u"
+    explorer.exe "$u"
 }
 if test @"${SCRNAME:-$(basename "$0")}" = @"xdg-open"; then
     case "${1}" in

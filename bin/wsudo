@@ -1,22 +1,46 @@
 #!/bin/sh -e
 ##:
-#h: Usage: wsudo COMMAND
+#h: Usage: wsudo [-u USER] COMMAND
 #h:
 #h: Execute command elevated using the local SSHD server to do the
 #h: elevation.
 ##:
 wsudo() {
-    ## If elevated already, execute.
-    if test @"$(whoami)" = @"root" || test -w C:/Windows; then
-        eval "$*"
+
+    local OPTIND optopt user=
+    
+    ## Parse command line arguments.
+    while getopts "u:" optopt; do
+        case $optopt in
+            u)  user="${OPTARG}";;
+            \?) return 1;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    
+    ## When the user isn't specified, the objective is elevation.
+    if test ! -n "${user}"; then
+        
+        ## Already elevated.
+        if test @"$(whoami)" = @"root" || test -w C:/Windows; then
+            eval "$*"
+            return 0
+        fi
+        
+        ## Check local .ssh is configured.
+        if test ! -d ~/.ssh; then
+            echo >&2 "error: Please configure local ~/.ssh"
+            return 1
+        fi
+        
+        ## Log as the same user.
+        ssh "${USERNAME}@127.0.0.1" "set -e; cd '$(pwd)'; $*"
         return 0
     fi
-    ## Try using ssh.
-    if test ! -d ~/.ssh; then
-        echo >&2 "error: Please configure local ~/.ssh"
-        return 1
-    fi
-    ssh "${USERNAME}@127.0.0.1" "set -e; $*" 
+
+    ## Execute as user.
+    ssh "${user}@127.0.0.1" "set -e; cd '$(pwd)'; $*"
+    return 0
 }
 ## -------------------------------------------------------------------
 if test @"$(basename "$0")" = @"wsudo"; then

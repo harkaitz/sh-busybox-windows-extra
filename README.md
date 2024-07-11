@@ -5,13 +5,6 @@ Scripts for Busybox for windows.
 
 ## Help
 
-cygwin
-
-    Usage: cygwin COMMAND
-    
-    Execute command in a Cygwin Bash login shell with "-ec" flags set
-    and the "set -o igncr" set.
-
 schtasks-boot
 
     Usage: schtasks-boot [-V] TASK COMMAND
@@ -44,24 +37,9 @@ schtasks-list
     
     Tasks that start with "BOOT-" and "DAILY-" are listed.
 
-wcompat
-
-    Usage: wcompat ...
-    
-    ... chkadmin              : Print error when not an administrator.
-    ... fetch OFILE URL       : Download a file using wget(1).
-    ... fetch-INS   URL       : Download a file ans set $INS to it's pathname.
-    ... msiexec-i MSI ARGS... : Install MSI file.
-    ... start FILE            : Open file with start.
-    ... explorer FILE         : Open file with explorer.
-    ... wrapper NAME < CODE   : Create script in WindowsApps/System32 directory.
-    ... g-exec CMD            : Execute with a GUI using schtasks.
-    
-    Some compativility functions to be used with the Busybox shell.
-
 wsudo
 
-    Usage: wsudo COMMAND
+    Usage: wsudo [-u USER] COMMAND
     
     Execute command elevated using the local SSHD server to do the
     elevation.
