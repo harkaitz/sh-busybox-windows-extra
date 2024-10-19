@@ -44,12 +44,6 @@ wsudo
     Execute command elevated using the local SSHD server to do the
     elevation.
 
-xdg-open
-
-    Usage: xdg-open FILE|URL
-    
-    A wrapper around explorer.exe that mimics xdg-open(1).
-
 ## Collaborating
 
 For making bug reports, feature requests and donations visit
